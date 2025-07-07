@@ -95,7 +95,7 @@ def responsesbuilder():
 
 def prompt_gemini(inputPrompt):
     #works
-    client = genai.Client(gemini_api_key)
+    client = genai.Client(api_key= '{gemini_api_key}')
     model="gemini-2.5-flash"
     currentQuestion = inputPrompt
     modelVersion = "2.5-flash"
