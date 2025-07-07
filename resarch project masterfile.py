@@ -8,7 +8,7 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 
-load_dotenv('C:/Users/jtist/Desktop/work/Github/aiproj/ai-bias-tracker-proj/resarch project env.env')
+load_dotenv()
 
 
 questionLst=[""]
