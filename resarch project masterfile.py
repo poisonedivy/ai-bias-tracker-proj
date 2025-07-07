@@ -4,6 +4,10 @@ from google import genai
 from datetime import datetime
 import requests
 import json
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 questionLst=[""]
@@ -18,7 +22,10 @@ skewLst=[""]
 curskew = ""
 countryLst=[""]
 curcountry = ""
-openRouterKey = "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"
+
+openRouterKey = os.getenv('OPENROUTER_API_KEY')
+gemini_api_key = os.getenv('GEMINI_API_KEY')
+
 
 
 def csvloader(filename):
@@ -88,7 +95,7 @@ def responsesbuilder():
 
 def prompt_gemini(inputPrompt):
     #works
-    client = genai.Client(api_key="AIzaSyBlusq9Cl_YsNukiGcv95SwbnLpWzAEH_g")
+    client = genai.Client(gemini_api_key)
     model="gemini-2.5-flash"
     currentQuestion = inputPrompt
     modelVersion = "2.5-flash"
@@ -111,7 +118,7 @@ def prompt_openRouter(inputPrompt, modelname):
     response = requests.post(
     url="https://openrouter.ai/api/v1/chat/completions",
     headers={
-        "Authorization": "Bearer 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",
+        "Authorization": "Bearer '{openRouterKey}'",
         "Content-Type": "application/json",
     },
     data=json.dumps({
