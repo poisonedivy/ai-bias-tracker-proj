@@ -6,8 +6,9 @@ import requests
 import json
 import os
 from dotenv import load_dotenv
+from openai import OpenAI
 
-load_dotenv()
+load_dotenv('C:/Users/jtist/Desktop/work/Github/aiproj/ai-bias-tracker-proj/resarch project env.env')
 
 
 questionLst=[""]
@@ -25,6 +26,7 @@ curcountry = ""
 
 openRouterKey = os.getenv('OPENROUTER_API_KEY')
 gemini_api_key = os.getenv('GEMINI_API_KEY')
+
 
 
 
@@ -107,33 +109,33 @@ def prompt_gemini(inputPrompt):
         )
         now = datetime.now()
         current_time = now.strftime('%m/%d/%Y, %H:%M:%S')
-        print("question: "+currentQuestion)
-        print("response: "+response.text)
-        print("current time: "+ current_time)
-        print("model: "+model)
         responsescurs.execute("INSERT INTO Responses VALUES (?, ?, ?, ?, ?)", (currentQuestion, response.text, model,modelVersion, current_time))
         responses.commit()
 
 def prompt_openRouter(inputPrompt, modelname):
-    response = requests.post(
-    url="https://openrouter.ai/api/v1/chat/completions",
-    headers={
-        "Authorization": "Bearer '{openRouterKey}'",
-        "Content-Type": "application/json",
-    },
-    data=json.dumps({
-        "model": modelname,
-        "messages": [
-        {
-            "role": "user",
-            "content": inputPrompt
-        }
-        ],
+    if responsescurs.execute("SELECT COUNT(*) FROM responses WHERE question = ? AND model_name = ?", (inputPrompt, modelname)).fetchone()[0] == 0:
+        response = requests.post(
+        url="https://openrouter.ai/api/v1/chat/completions",
+        headers={
+            "Authorization": openRouterKey,
+            "Content-Type": "application/json",
+        },
+        data=json.dumps({
+            "model": modelname,
+            "messages": [
+            {
+                "role": "user",
+                "content": inputPrompt
+            }
+            ],
 
-    })
-    )
-    response_data = response.json()
-    print(response_data.get("choices")[0].get("message").get("content"))
+        })
+        )
+        response_data = response.json()
+        now = datetime.now()
+        current_time = now.strftime('%m/%d/%Y, %H:%M:%S')
+        responsescurs.execute("INSERT INTO Responses VALUES (?, ?, ?, ?, ?)", (inputPrompt, response_data.get("choices")[0].get("message").get("content"), modelname,"openrouter", current_time))
+        responses.commit()
 
 
 
@@ -144,8 +146,11 @@ def main():
     responsesbuilder()
     for i in range(2,10):
         currentQuestion = questionLst[i]
-        prompt_gemini(currentQuestion)
-    dataBasePrinter("responses")
+        prompt_openRouter(currentQuestion, "meta-llama/llama-4-maverick:free")
+    #dataBasePrinter("responses")
+    for row in responsescurs.execute("SELECT question FROM Responses WHERE model_name = 'meta-llama/llama-4-maverick:free'"):
+        print(row)
+
 
 
 
