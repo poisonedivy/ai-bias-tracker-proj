@@ -155,6 +155,7 @@ def main():
     for row in responsescurs.execute("SELECT * FROM Responses WHERE model_name = 'gemini-2.5-flash'"):
         print(row)
         print("\n")
+    
 
 
 
