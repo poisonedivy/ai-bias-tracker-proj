@@ -143,15 +143,15 @@ def prompt_openRouter(inputPrompt, modelname):
 
 
 def main():
-    #csvloader('C:/Users/jtist/Downloads/prompts for ai tracker - Sheet1.csv')
-    #promptExtender()
-    #databasebuilder()
+    csvloader('C:/Users/jtist/Downloads/prompts for ai tracker - Sheet1.csv')
+    promptExtender()
+    databasebuilder()
     #dataBasePrinter("prompts")
     responsesbuilder()
-    #for i in range(2, len(extendedQuestionLst)):
-        #currentQuestion = extendedQuestionLst[i]
-        #prompt_gemini(currentQuestion)
-    dataBasePrinter("responses")
+    for i in range(2, len(extendedQuestionLst)):
+        currentQuestion = extendedQuestionLst[i]
+        prompt_gemini(currentQuestion)
+    #dataBasePrinter("responses")
     for row in responsescurs.execute("SELECT * FROM Responses WHERE model_name = 'gemini-2.5-flash'"):
         print(row)
 
