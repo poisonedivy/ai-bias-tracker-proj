@@ -11,17 +11,17 @@ from openai import OpenAI
 load_dotenv()
 
 
-questionLst=[""]
-currentQuestion = questionLst[0]
-extendedQuestionLst = [""]
+questionLst=[]
+currentQuestion = ""
+extendedQuestionLst = []
 
 responses = {}
 currentResponse = ""
-subjectLst=[""]
+subjectLst=[]
 cursubject = ""
-skewLst=[""]
+skewLst=[]
 curskew = ""
-countryLst=[""]
+countryLst=[]
 curcountry = ""
 
 openRouterKey = os.getenv('OPENROUTER_API_KEY')
@@ -34,6 +34,9 @@ def csvloader(filename):
     #works ish but first 2 entries are garbage
     with open(filename, 'r') as file:
         reader = csv.reader(file)
+        #first 2 rows are garbage so skip them
+        next(reader)  # Skip first row
+        next(reader)  # Skip second row
         for row in reader:
             questionLst.append(row[0])
             subjectLst.append(row[1])
@@ -44,19 +47,19 @@ def promptExtender():
     #not done yet needs more to be added
     for question in questionLst:
         #republican view
-        extendedQuestionLst.append(question + "from a republican point of view")
+        extendedQuestionLst.append(question + " from a republican point of view")
 
         #democrate view
-        extendedQuestionLst.append(question + "from a democrat point of view")
+        extendedQuestionLst.append(question + " from a democrat point of view")
 
         #independent view
-        extendedQuestionLst.append(question + "from a independent point of view")
+        extendedQuestionLst.append(question + " from a independent point of view")
 
         #objective view
-        extendedQuestionLst.append(question + "from a objective point of view")
+        extendedQuestionLst.append(question + " from a objective point of view")
 
         #as an expert in the subject
-        extendedQuestionLst.append("as an expert in the subject" + question)
+        extendedQuestionLst.append("as an expert in the subject " + question)
 
 
 def databasebuilder():
@@ -97,7 +100,7 @@ def responsesbuilder():
 
 def prompt_gemini(inputPrompt):
     #works
-    client = genai.Client(api_key= '{gemini_api_key}')
+    client = genai.Client(api_key= gemini_api_key)
     model="gemini-2.5-flash"
     currentQuestion = inputPrompt
     modelVersion = "2.5-flash"
@@ -140,15 +143,16 @@ def prompt_openRouter(inputPrompt, modelname):
 
 
 def main():
-    csvloader('C:/Users/jtist/Downloads/prompts for ai tracker - Sheet1.csv')
-    databasebuilder()
+    #csvloader('C:/Users/jtist/Downloads/prompts for ai tracker - Sheet1.csv')
+    #promptExtender()
+    #databasebuilder()
     #dataBasePrinter("prompts")
     responsesbuilder()
-    for i in range(2,10):
-        currentQuestion = questionLst[i]
-        prompt_openRouter(currentQuestion, "meta-llama/llama-4-maverick:free")
-    #dataBasePrinter("responses")
-    for row in responsescurs.execute("SELECT question FROM Responses WHERE model_name = 'meta-llama/llama-4-maverick:free'"):
+    #for i in range(2, len(extendedQuestionLst)):
+        #currentQuestion = extendedQuestionLst[i]
+        #prompt_gemini(currentQuestion)
+    dataBasePrinter("responses")
+    for row in responsescurs.execute("SELECT * FROM Responses WHERE model_name = 'gemini-2.5-flash'"):
         print(row)
 
 
