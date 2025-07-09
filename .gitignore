@@ -13,9 +13,10 @@ __pycache__/
 .env.*.local
 
 # Database files
-*.db
-*.sqlite
-*.sqlite3
+#commented out
+#*.db
+#*.sqlite
+#*.sqlite3
 
 # Python
 __pycache__/
