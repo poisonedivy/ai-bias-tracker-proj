@@ -28,6 +28,12 @@ openRouterKey = os.getenv('OPENROUTER_API_KEY')
 gemini_api_key = os.getenv('GEMINI_API_KEY')
 
 
+#values llms we are using
+#meta-llama/llama-4-maverick-17b-128e-instruct:free
+#deepseek/deepseek-r1-0528-qwen3-8b:free
+#mistralai/mistral-small-3.2-24b-instruct:free
+#geemini-2.5-flash
+
 
 
 def csvloader(filename):
@@ -150,11 +156,12 @@ def main():
     responsesbuilder()
     for i in range(2, len(extendedQuestionLst)):
         currentQuestion = extendedQuestionLst[i]
-        prompt_gemini(currentQuestion)
+        prompt_openRouter(currentQuestion, "deepseek/deepseek-r1-0528-qwen3-8b:free")
     #dataBasePrinter("responses")
-    for row in responsescurs.execute("SELECT * FROM Responses WHERE model_name = 'gemini-2.5-flash'"):
-        print(row)
-        print("\n")
+    responselength = 0
+    for row in responsescurs.execute("SELECT * FROM Responses WHERE model_name = 'deepseek/deepseek-r1-0528-qwen3-8b:free'"):
+        responselength += 1
+    print(responselength)
     
 
 
