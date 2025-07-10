@@ -25,14 +25,16 @@ countryLst=[]
 curcountry = ""
 
 openRouterKey = os.getenv('OPENROUTER_API_KEY')
+openRouterKey2= os.getenv('OPENROUTER_API_KEY2')
 gemini_api_key = os.getenv('GEMINI_API_KEY')
+gemini_api_key2 = os.getenv('GEMINI_API_KEY2')
 
 
 #values llms we are using
 #meta-llama/llama-4-maverick-17b-128e-instruct:free
 #deepseek/deepseek-r1-0528-qwen3-8b:free
 #mistralai/mistral-small-3.2-24b-instruct:free
-#geemini-2.5-flash
+#gemini-2.5-flash
 
 
 
@@ -106,45 +108,86 @@ def responsesbuilder():
 
 def prompt_gemini(inputPrompt):
     #works
-    client = genai.Client(api_key= gemini_api_key)
-    model="gemini-2.5-flash"
-    currentQuestion = inputPrompt
-    modelVersion = "2.5-flash"
+    try:
+        client = genai.Client(api_key= gemini_api_key)
+        model="gemini-2.5-flash"
+        currentQuestion = inputPrompt
+        modelVersion = "2.5-flash"
 
-    if responsescurs.execute("SELECT COUNT(*) FROM responses WHERE question = ? AND model_name = ?", (inputPrompt, model)).fetchone()[0] == 0:
-        response = client.models.generate_content(
-            model=model,
-            contents= inputPrompt,
-        )
-        now = datetime.now()
-        current_time = now.strftime('%m/%d/%Y, %H:%M:%S')
-        responsescurs.execute("INSERT INTO Responses VALUES (?, ?, ?, ?, ?)", (currentQuestion, response.text, model,modelVersion, current_time))
-        responses.commit()
+        if responsescurs.execute("SELECT COUNT(*) FROM responses WHERE question = ? AND model_name = ?", (inputPrompt, model)).fetchone()[0] == 0:
+            response = client.models.generate_content(
+                model=model,
+                contents= inputPrompt,
+            )
+            now = datetime.now()
+            current_time = now.strftime('%m/%d/%Y, %H:%M:%S')
+            responsescurs.execute("INSERT INTO Responses VALUES (?, ?, ?, ?, ?)", (currentQuestion, response.text, model,modelVersion, current_time))
+            responses.commit()
+    except:
+        client = genai.Client(api_key= gemini_api_key2)
+        model="gemini-2.5-flash"
+        currentQuestion = inputPrompt
+        modelVersion = "2.5-flash"
+
+        if responsescurs.execute("SELECT COUNT(*) FROM responses WHERE question = ? AND model_name = ?", (inputPrompt, model)).fetchone()[0] == 0:
+            response = client.models.generate_content(
+                model=model,
+                contents= inputPrompt,
+            )
+            now = datetime.now()
+            current_time = now.strftime('%m/%d/%Y, %H:%M:%S')
+            responsescurs.execute("INSERT INTO Responses VALUES (?, ?, ?, ?, ?)", (currentQuestion, response.text, model,modelVersion, current_time))
+            responses.commit()
 
 def prompt_openRouter(inputPrompt, modelname):
     if responsescurs.execute("SELECT COUNT(*) FROM responses WHERE question = ? AND model_name = ?", (inputPrompt, modelname)).fetchone()[0] == 0:
-        response = requests.post(
-        url="https://openrouter.ai/api/v1/chat/completions",
-        headers={
-            "Authorization": openRouterKey,
-            "Content-Type": "application/json",
-        },
-        data=json.dumps({
-            "model": modelname,
-            "messages": [
-            {
-                "role": "user",
-                "content": inputPrompt
-            }
-            ],
+        try:
+            response = requests.post(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": openRouterKey,
+                "Content-Type": "application/json",
+            },
+            data=json.dumps({
+                "model": modelname,
+                "messages": [
+                {
+                    "role": "user",
+                    "content": inputPrompt
+                }
+                ],
 
-        })
-        )
-        response_data = response.json()
-        now = datetime.now()
-        current_time = now.strftime('%m/%d/%Y, %H:%M:%S')
-        responsescurs.execute("INSERT INTO Responses VALUES (?, ?, ?, ?, ?)", (inputPrompt, response_data.get("choices")[0].get("message").get("content"), modelname,"openrouter", current_time))
-        responses.commit()
+            })
+            )
+            response_data = response.json()
+            now = datetime.now()
+            current_time = now.strftime('%m/%d/%Y, %H:%M:%S')
+            responsescurs.execute("INSERT INTO Responses VALUES (?, ?, ?, ?, ?)", (inputPrompt, response_data.get("choices")[0].get("message").get("content"), modelname,"openrouter", current_time))
+            responses.commit()
+        except:
+                response = requests.post(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": openRouterKey2,
+                "Content-Type": "application/json",
+            },
+            data=json.dumps({
+                "model": modelname,
+                "messages": [
+                {
+                    "role": "user",
+                    "content": inputPrompt
+                }
+                ],
+
+            })
+            )
+                response_data = response.json()
+                now = datetime.now()
+                current_time = now.strftime('%m/%d/%Y, %H:%M:%S')
+                responsescurs.execute("INSERT INTO Responses VALUES (?, ?, ?, ?, ?)", (inputPrompt, response_data.get("choices")[0].get("message").get("content"), modelname,"openrouter", current_time))
+                responses.commit()
+
 
 
 
@@ -156,10 +199,11 @@ def main():
     responsesbuilder()
     for i in range(2, len(extendedQuestionLst)):
         currentQuestion = extendedQuestionLst[i]
-        prompt_openRouter(currentQuestion, "deepseek/deepseek-r1-0528-qwen3-8b:free")
+        #prompt_openRouter(currentQuestion, "deepseek/deepseek-r1-0528-qwen3-8b:free")
+        prompt_gemini(currentQuestion)
     #dataBasePrinter("responses")
     responselength = 0
-    for row in responsescurs.execute("SELECT * FROM Responses WHERE model_name = 'deepseek/deepseek-r1-0528-qwen3-8b:free'"):
+    for row in responsescurs.execute("SELECT * FROM Responses WHERE model_name = 'gemini-2.5-flash'"):
         responselength += 1
     print(responselength)
     
