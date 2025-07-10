@@ -24,11 +24,8 @@ def database_to_csv(model, csv_filename):
         
         # Write header row (column names)
         writer.writerow(column_names)
-        
-        # Write data rows
         writer.writerows(rows)
     
-    # Close database connection
     conn.close()
     
     print(f"Successfully exported {len(rows)} rows for model '{model}' to {csv_filename}")
