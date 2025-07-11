@@ -17,9 +17,9 @@ def llm_labeler2(filepath):
         reader = csv.DictReader(csvfile)
         fieldnames = reader.fieldnames
         
-        # Add 'label' if not already
-        if 'label' not in fieldnames:
-            fieldnames = list(fieldnames) + ['label']
+        # Add 'Ai_label' if not already
+        if 'Ai_label' not in fieldnames:
+            fieldnames = list(fieldnames) + ['Ai_label']
         
         for row in reader:
             rows.append(row)
@@ -27,8 +27,8 @@ def llm_labeler2(filepath):
     #write to csv
     for i, row in enumerate(rows):
         # Check if already labeled
-        if 'label' in row and row['label'] and row['label'].strip():
-            print(f"Skipping already labeled row: {row['label']}")
+        if 'Ai_label' in row and row['Ai_label'] and row['Ai_label'].strip():
+            print(f"Skipping already labeled row: {row['Ai_label']}")
             continue
         
         question = row['question']
@@ -50,15 +50,15 @@ def llm_labeler2(filepath):
             
             # Validate the response
             if label in ['left', 'right', 'none', 'unknown']:
-                row['label'] = label
+                row['Ai_label'] = label
                 print(f"Labeled as: {label}")
             else:
-                row['label'] = 'unknown'
+                row['Ai_label'] = 'unknown'
                 print(f"Invalid response from API: {label}, setting to 'unknown'")
                 
         except Exception as e:
             print(f"Error calling API: {e}")
-            row['label'] = 'error'
+            
         
         # Write the entire file after each label is added
         with open(filepath, 'w', newline='') as csvfile:
