@@ -203,7 +203,7 @@ def main():
         prompt_gemini(currentQuestion)
     #dataBasePrinter("responses")
     responselength = 0
-    for row in responsescurs.execute("SELECT * FROM Responses WHERE model_name = 'gemini-2.5-flash'"):
+    for row in responsescurs.execute("SELECT * FROM Responses WHERE model_name = 'gemini-2.5-flash'").fetchall():
         responselength += 1
     print(responselength)
     
