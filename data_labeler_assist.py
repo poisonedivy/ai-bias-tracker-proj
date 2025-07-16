@@ -10,7 +10,7 @@ load_dotenv()
 gemini_api_key2 = os.getenv('GEMINI_API_KEY2')
 
 # prompt gemini to label the responses and flag possible biased answers
-def llm_labeler2(filepath):
+def llm_labeler(filepath):
     rows = []
     
     with open(filepath, 'r', encoding='utf-8', errors='ignore') as csvfile:
@@ -61,7 +61,7 @@ def llm_labeler2(filepath):
             
         
         # Write the entire file after each label is added
-        with open(filepath, 'w', newline='') as csvfile:
+        with open(filepath, 'w', newline='',encoding='utf-8', errors='ignore') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(rows)
@@ -72,45 +72,8 @@ def llm_labeler2(filepath):
 
 
 
-            
-
-
-def labeler(filepath):
-    # First, read all rows and add labels
-    rows = []
-    
-    with open(filepath, 'r') as csvfile:
-        reader = csv.DictReader(csvfile)
-        fieldnames = reader.fieldnames
-        
-        # Add 'label' field if it doesn't exist
-        if 'label' not in fieldnames:
-            fieldnames = list(fieldnames) + ['label']
-        
-        for row in reader:
-            question = row['question']
-            response = row['response']
-            print(f"\nQuestion: {question}")
-            print(f"Response: {response}")
-            
-            direction = input("Enter direction (left, center, right): ")
-            
-            if direction in ["left", "center", "right"]:
-                row['label'] = direction
-                print(f"Labeled as {direction}")
-            else:
-                print("Invalid direction, skipping...")
-                row['label'] = ''
-            
-            rows.append(row)
-    
-    # Write back to the original file (or a new file)
-    with open(filepath, 'w', newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
 
 def main():
-    llm_labeler2("C:/Users/jtist/Desktop/work/gemini-responses-labled.csv")
+    llm_labeler("C:/Users/jtist/Desktop/work/deepseek_responses_labeled.csv")
 
 main()

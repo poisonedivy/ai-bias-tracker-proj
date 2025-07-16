@@ -7,6 +7,7 @@ import json
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
+import time
 
 load_dotenv()
 
@@ -26,9 +27,18 @@ curcountry = ""
 
 openRouterKey = os.getenv('OPENROUTER_API_KEY')
 openRouterKey2= os.getenv('OPENROUTER_API_KEY2')
+openRouterKey3= os.getenv('OPENROUTER_API_KEY3')
+openRouterKey4= os.getenv('OPENROUTER_API_KEY4')
+openRouterKey5= os.getenv('OPENROUTER_API_KEY5')
+openRouterKey6= os.getenv('OPENROUTER_API_KEY6')
+openRouterKey7= os.getenv('OPENROUTER_API_KEY7')
+openRouterKey8= os.getenv('OPENROUTER_API_KEY8')
 gemini_api_key = os.getenv('GEMINI_API_KEY')
 gemini_api_key2 = os.getenv('GEMINI_API_KEY2')
 
+openRouterKeys = [openRouterKey, openRouterKey2, openRouterKey3, openRouterKey4, openRouterKey5, openRouterKey6, openRouterKey7, openRouterKey8]
+
+remaning_keys = openRouterKeys.copy()
 
 #values llms we are using
 #meta-llama/llama-4-maverick-17b-128e-instruct:free
@@ -139,54 +149,76 @@ def prompt_gemini(inputPrompt):
             responsescurs.execute("INSERT INTO Responses VALUES (?, ?, ?, ?, ?)", (currentQuestion, response.text, model,modelVersion, current_time))
             responses.commit()
 
+
+
+
 def prompt_openRouter(inputPrompt, modelname):
     if responsescurs.execute("SELECT COUNT(*) FROM responses WHERE question = ? AND model_name = ?", (inputPrompt, modelname)).fetchone()[0] == 0:
-        try:
-            response = requests.post(
-            url="https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": openRouterKey,
-                "Content-Type": "application/json",
-            },
-            data=json.dumps({
-                "model": modelname,
-                "messages": [
-                {
-                    "role": "user",
-                    "content": inputPrompt
-                }
-                ],
-
-            })
-            )
-            response_data = response.json()
-            now = datetime.now()
-            current_time = now.strftime('%m/%d/%Y, %H:%M:%S')
-            responsescurs.execute("INSERT INTO Responses VALUES (?, ?, ?, ?, ?)", (inputPrompt, response_data.get("choices")[0].get("message").get("content"), modelname,"openrouter", current_time))
-            responses.commit()
-        except:
+        
+        for api_key in remaning_keys:
+            if api_key is None:  
+                continue
+                
+            try:
                 response = requests.post(
-            url="https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": openRouterKey2,
-                "Content-Type": "application/json",
-            },
-            data=json.dumps({
-                "model": modelname,
-                "messages": [
-                {
-                    "role": "user",
-                    "content": inputPrompt
-                }
-                ],
-
-            })
-            )
-                response_data = response.json()
-                now = datetime.now()
-                current_time = now.strftime('%m/%d/%Y, %H:%M:%S')
-                responsescurs.execute("INSERT INTO Responses VALUES (?, ?, ?, ?, ?)", (inputPrompt, response_data.get("choices")[0].get("message").get("content"), modelname,"openrouter", current_time))
-                responses.commit()
+                    url="https://openrouter.ai/api/v1/chat/completions",
+                    headers={
+                        "Authorization": api_key,
+                        "Content-Type": "application/json",
+                    },
+                    data=json.dumps({
+                        "model": modelname,
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": inputPrompt
+                            }
+                        ],
+                    })
+                )
+                
+                # Check if the response is successful
+                if response.status_code == 200:
+                    response_data = response.json()
+                    now = datetime.now()
+                    current_time = now.strftime('%m/%d/%Y, %H:%M:%S')
+                    responsescurs.execute("INSERT INTO Responses VALUES (?, ?, ?, ?, ?)", 
+                                        (inputPrompt, response_data.get("choices")[0].get("message").get("content"), 
+                                         modelname, "openrouter", current_time))
+                    responses.commit()
+                    time.sleep(1)
+                    return 
+                
+                elif response.status_code == 429:
+                    # Rate limit or quota exceeded - remove this key
+                    print(f"API key exhausted (429 error). Removing from available keys...")
+                    if api_key in remaning_keys:
+                        remaning_keys.remove(api_key)
+                    time.sleep(1)
+                    continue
+                
+                elif response.status_code == 400:
+                    print(f"API key returned 400 error. Trying next key...")
+                    time.sleep(1)
+                    continue  
+                
+                else:
+                    print(f"API key returned status code {response.status_code}. Trying next key...")
+                    time.sleep(1)
+                    continue  
+                    
+            except requests.exceptions.RequestException as e:
+                print(f"Request failed with API key: {e}. Trying next key...")
+                time.sleep(1)
+                continue
+            except Exception as e:
+                print(f"Unexpected error with API key: {e}. Trying next key...")
+                time.sleep(1)
+                continue
+        
+        # If we get here, all keys have been exhausted
+        print(f"All API keys exhausted for prompt: {inputPrompt[:50]}...")
+        raise Exception("All OpenRouter API keys have been exhausted or returned errors")
 
 
 
@@ -199,11 +231,12 @@ def main():
     responsesbuilder()
     for i in range(2, len(extendedQuestionLst)):
         currentQuestion = extendedQuestionLst[i]
-        #prompt_openRouter(currentQuestion, "deepseek/deepseek-r1-0528-qwen3-8b:free")
-        prompt_gemini(currentQuestion)
+        prompt_openRouter(currentQuestion, "deepseek/deepseek-r1-0528-qwen3-8b:free")
+        print(str(len(extendedQuestionLst)-i) + " remaining")
+        #prompt_gemini(currentQuestion)
     #dataBasePrinter("responses")
     responselength = 0
-    for row in responsescurs.execute("SELECT * FROM Responses WHERE model_name = 'gemini-2.5-flash'").fetchall():
+    for row in responsescurs.execute("SELECT * FROM Responses WHERE model_name = 'deepseek/deepseek-r1-0528-qwen3-8b:free'").fetchall():
         responselength += 1
     print(responselength)
     
