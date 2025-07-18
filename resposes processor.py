@@ -392,8 +392,8 @@ def predict_single_text(classifier, text):
 def main():
     classifier = train_and_evaluate_model(
     csv_file='C:/Users/jtist/Desktop/work/all labeled responses - Sheet1.csv',
-    text_column='response',  # Adjust to your column name
-    label_column='economic human label',  # Adjust to your column name
+    text_column='response',  
+    label_column='economic human label', 
     classifier_type='logistic_regression',
     model_path='C:/Users/jtist/Desktop/work/Github/aiproj/ai-bias-tracker-proj/model/logistic_regression_model',
 )
