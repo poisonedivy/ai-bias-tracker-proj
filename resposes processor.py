@@ -13,6 +13,8 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
 import nltk
 import csv
+import os
+import joblib
 
 # Download required NLTK data (run once)
 nltk.download('punkt')
@@ -33,7 +35,7 @@ def csv_tokenizer(filepath):
 
 
 class TFIDFClassifier:
-    def __init__(self, classifier_type='logistic_regression', max_features=10000, min_df=2, max_df=0.8):
+    def __init__(self, classifier_type='logistic_regression', max_features=10000, min_df=2, max_df=0.8, model_path=None):
         """
         Initialize the TF-IDF classifier
         
@@ -55,6 +57,8 @@ class TFIDFClassifier:
             max_df=max_df,
             ngram_range=(1, 2)  # Use unigrams and bigrams
         )
+        self.model_path = model_path
+        self.is_trained = False
         
         # Initialize classifier based on type
         if classifier_type == 'naive_bayes':
@@ -88,9 +92,88 @@ class TFIDFClassifier:
         
         return tokens
     
-    def fit(self, X_train, y_train):
+    def save_model(self, filepath=None):
+        """
+        Save the trained model and vectorizer to disk
+        
+        Args:
+            filepath: Path to save the model (without extension). If None, uses self.model_path
+        """
+        if not self.is_trained:
+            print("Model is not trained yet. Cannot save.")
+            return False
+        
+        save_path = filepath or self.model_path
+        if save_path is None:
+            print("No save path specified. Cannot save model.")
+            return False
+        
+        try:
+            # Create directory if it doesn't exist
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            
+            # Save the model components
+            model_data = {
+                'classifier': self.classifier,
+                'vectorizer': self.vectorizer,
+                'classifier_type': self.classifier_type,
+                'is_trained': self.is_trained
+            }
+            
+            joblib.dump(model_data, f"{save_path}.pkl")
+            print(f"Model saved successfully to {save_path}.pkl")
+            return True
+            
+        except Exception as e:
+            print(f"Error saving model: {e}")
+            return False
+    
+    def load_model(self, filepath=None):
+        """
+        Load a trained model and vectorizer from disk
+        
+        Args:
+            filepath: Path to load the model from (without extension). If None, uses self.model_path
+        
+        Returns:
+            bool: True if loaded successfully, False otherwise
+        """
+        load_path = filepath or self.model_path
+        if load_path is None:
+            print("No load path specified. Cannot load model.")
+            return False
+        
+        model_file = f"{load_path}.pkl"
+        
+        if not os.path.exists(model_file):
+            print(f"Model file {model_file} does not exist.")
+            return False
+        
+        try:
+            # Load the model components
+            model_data = joblib.load(model_file)
+            
+            self.classifier = model_data['classifier']
+            self.vectorizer = model_data['vectorizer']
+            self.classifier_type = model_data['classifier_type']
+            self.is_trained = model_data['is_trained']
+            
+            print(f"Model loaded successfully from {model_file}")
+            print(f"Loaded {self.classifier_type} classifier with vocabulary size: {len(self.vectorizer.vocabulary_)}")
+            return True
+            
+        except Exception as e:
+            print(f"Error loading model: {e}")
+            return False
+    
+    def fit(self, X_train, y_train, save_after_training=True):
         """
         Train the classifier
+        
+        Args:
+            X_train: Training text data
+            y_train: Training labels
+            save_after_training: Whether to save the model after training
         """
         print("Vectorizing training data...")
         X_train_tfidf = self.vectorizer.fit_transform(X_train)
@@ -98,7 +181,12 @@ class TFIDFClassifier:
         print(f"Training {self.classifier_type} classifier...")
         self.classifier.fit(X_train_tfidf, y_train)
         
+        self.is_trained = True
         print(f"Training completed. Vocabulary size: {len(self.vectorizer.vocabulary_)}")
+        
+        # Save model after training if requested and path is available
+        if save_after_training and self.model_path:
+            self.save_model()
     
     def predict(self, X_test):
         """
@@ -198,11 +286,11 @@ def load_and_preprocess_data(csv_file, text_column='text', label_column='label')
         print(f"Error loading data: {e}")
         return None, None
 
-
 def train_and_evaluate_model(csv_file, text_column='text', label_column='label', 
-                           classifier_type='logistic_regression', test_size=0.2, random_state=42):
+                           classifier_type='logistic_regression', test_size=0.2, random_state=42,
+                           model_path=None, force_retrain=False):
     """
-    Complete training and evaluation pipeline
+    Complete training and evaluation pipeline with model saving/loading
     
     Args:
         csv_file: Path to CSV file with labeled data
@@ -211,10 +299,38 @@ def train_and_evaluate_model(csv_file, text_column='text', label_column='label',
         classifier_type: Type of classifier to use
         test_size: Proportion of data to use for testing
         random_state: Random seed for reproducibility
+        model_path: Path to save/load the model (without extension)
+        force_retrain: If True, retrain even if saved model exists
     
     Returns:
         Trained classifier instance
     """
+    
+    # Initialize classifier with model path
+    classifier = TFIDFClassifier(classifier_type=classifier_type, model_path=model_path)
+    
+    # Try to load existing model first (unless force_retrain is True)
+    if not force_retrain and model_path and classifier.load_model():
+        print("Using loaded pre-trained model.")
+        
+        # Still load data for evaluation if needed
+        X, y = load_and_preprocess_data(csv_file, text_column, label_column)
+        if X is not None and y is not None:
+            # Split data for evaluation
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=test_size, random_state=random_state, stratify=y
+            )
+            
+            print(f"\nEvaluating loaded model on test set (size: {len(X_test)})...")
+            print("\n" + "="*50)
+            print("EVALUATION RESULTS (LOADED MODEL)")
+            print("="*50)
+            accuracy = classifier.evaluate(X_test, y_test)
+        
+        return classifier
+    
+    # If no saved model or force_retrain is True, train from scratch
+    print("Training new model...")
     
     # Load data
     X, y = load_and_preprocess_data(csv_file, text_column, label_column)
@@ -230,8 +346,7 @@ def train_and_evaluate_model(csv_file, text_column='text', label_column='label',
     print(f"\nTraining set size: {len(X_train)}")
     print(f"Test set size: {len(X_test)}")
     
-    # Initialize and train classifier
-    classifier = TFIDFClassifier(classifier_type=classifier_type)
+    # Train classifier (will auto-save if model_path is provided)
     classifier.fit(X_train, y_train)
     
     # Evaluate on test set
@@ -245,7 +360,6 @@ def train_and_evaluate_model(csv_file, text_column='text', label_column='label',
         classifier.get_feature_importance()
     
     return classifier
-
 
 def predict_single_text(classifier, text):
     """
@@ -280,7 +394,18 @@ def main():
     csv_file='C:/Users/jtist/Desktop/work/all labeled responses - Sheet1.csv',
     text_column='response',  # Adjust to your column name
     label_column='economic human label',  # Adjust to your column name
-    classifier_type='logistic_regression'
+    classifier_type='logistic_regression',
+    model_path='C:/Users/jtist/Desktop/work/Github/aiproj/ai-bias-tracker-proj/model/logistic_regression_model',
 )
+    prediction, probabilities = predict_single_text(
+        classifier, 
+        "Donald trump is the greatest president in american history due to his deregulation and tax cuts"
+    )
+    
+    print(f"Prediction: {prediction}")
+    if probabilities:
+        print(f"Probabilities: {probabilities}")
+
+
 
 main()

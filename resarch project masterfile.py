@@ -231,12 +231,12 @@ def main():
     responsesbuilder()
     for i in range(2, len(extendedQuestionLst)):
         currentQuestion = extendedQuestionLst[i]
-        prompt_openRouter(currentQuestion, "deepseek/deepseek-r1-0528-qwen3-8b:free")
+        prompt_openRouter(currentQuestion, "mistralai/mistral-small-3.2-24b-instruct:free")
         print(str(len(extendedQuestionLst)-i) + " remaining")
         #prompt_gemini(currentQuestion)
     #dataBasePrinter("responses")
     responselength = 0
-    for row in responsescurs.execute("SELECT * FROM Responses WHERE model_name = 'deepseek/deepseek-r1-0528-qwen3-8b:free'").fetchall():
+    for row in responsescurs.execute("SELECT * FROM Responses WHERE model_name = 'mistralai/mistral-small-3.2-24b-instruct:free'").fetchall():
         responselength += 1
     print(responselength)
     
