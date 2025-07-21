@@ -17,8 +17,8 @@ import os
 import joblib
 
 # Download required NLTK data (run once)
-nltk.download('punkt')
-nltk.download('stopwords')
+#nltk.download('punkt')
+#nltk.download('stopwords')
 
 stop_words = set(stopwords.words('english'))
 
@@ -38,24 +38,34 @@ class TFIDFClassifier:
     def __init__(self, classifier_type='logistic_regression', max_features=10000, min_df=2, max_df=0.8, model_path=None):
         """
         Initialize the TF-IDF classifier
-        
-        Args:
-            classifier_type: 'naive_bayes', 'logistic_regression', or 'svm'
-            max_features: Maximum number of features to use
-            min_df: Minimum document frequency for a term to be included
-            max_df: Maximum document frequency for a term to be included
         """
         self.classifier_type = classifier_type
         self.stemmer = PorterStemmer()
         self.stop_words = set(stopwords.words('english'))
         
-        # Initialize TF-IDF vectorizer
+        # Expand political terms to include stemmed versions
+        base_political_terms = {'republican', 'democrat', 'independent', 'objective'}
+        self.political_terms = set()
+        for term in base_political_terms:
+            self.political_terms.add(term)
+            self.political_terms.add(self.stemmer.stem(term))
+        
+        # Add stemmed versions
+        self.political_terms.update({
+            'repblica', 'democra', 'independ', 'object', 'objectiv',
+            'gop', 'dem', 'dems', 'republicans', 'democrats'
+        })
+        
+        # Initialize TF-IDF vectorizer with both preprocessor and tokenizer
         self.vectorizer = TfidfVectorizer(
-            tokenizer=self.preprocess_text,
+            preprocessor=self.clean_text,  # Clean the text first
+            tokenizer=self.tokenize_and_filter,  # Then tokenize and filter
+            lowercase=False,  # We handle lowercasing in preprocessor
             max_features=max_features,
             min_df=min_df,
             max_df=max_df,
-            ngram_range=(1, 2)  # Use unigrams and bigrams
+            ngram_range=(1, 2),
+            token_pattern=None  # no default token pattern since using custom tokenizer
         )
         self.model_path = model_path
         self.is_trained = False
@@ -70,9 +80,9 @@ class TFIDFClassifier:
         else:
             raise ValueError("classifier_type must be 'naive_bayes', 'logistic_regression', or 'svm'")
     
-    def preprocess_text(self, text):
+    def clean_text(self, text):
         """
-        Preprocess text: tokenize, remove stopwords, punctuation, and stem
+        Initial text cleaning - this runs first
         """
         # Convert to lowercase
         text = text.lower()
@@ -81,16 +91,39 @@ class TFIDFClassifier:
         text = re.sub(r'http\S+|www\S+|https\S+', '', text, flags=re.MULTILINE)
         text = re.sub(r'@\w+|#\w+', '', text)
         
+        return text
+    
+    def tokenize_and_filter(self, text):
+        """
+        Tokenize and filter - this runs after clean_text
+        """
         # Tokenize
         tokens = word_tokenize(text)
         
-        # Filter tokens and stem
-        tokens = [
-            self.stemmer.stem(w) for w in tokens 
-            if w.lower() not in self.stop_words and w not in string.punctuation and w.isalpha()
-        ]
+        # Filter tokens
+        filtered_tokens = []
+        for w in tokens:
+            w_lower = w.lower()
+            w_stemmed = self.stemmer.stem(w_lower)
+            
+            # Check if token should be kept
+            if (w_lower not in self.stop_words and 
+                w not in string.punctuation and 
+                w.isalpha() and 
+                w_lower not in self.political_terms and
+                w_stemmed not in self.political_terms):
+                filtered_tokens.append(w_stemmed)
         
-        return tokens
+        return filtered_tokens
+    
+    def preprocess_text(self, text):
+        """
+        Legacy method - now calls the new pipeline
+        """
+        cleaned = self.clean_text(text)
+        return self.tokenize_and_filter(cleaned)
+
+
     
     def save_model(self, filepath=None):
         """
@@ -396,6 +429,7 @@ def main():
     label_column='economic human label', 
     classifier_type='logistic_regression',
     model_path='C:/Users/jtist/Desktop/work/Github/aiproj/ai-bias-tracker-proj/model/logistic_regression_model',
+    force_retrain=True
 )
     prediction, probabilities = predict_single_text(
         classifier, 

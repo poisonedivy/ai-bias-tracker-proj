@@ -41,7 +41,7 @@ openRouterKeys = [openRouterKey, openRouterKey2, openRouterKey3, openRouterKey4,
 remaning_keys = openRouterKeys.copy()
 
 #values llms we are using
-#meta-llama/llama-4-maverick-17b-128e-instruct:free
+#meta-llama/llama-3.3-70b-instruct:free llama is not working as intended so perhaps moonshotai/kimi-k2:free
 #deepseek/deepseek-r1-0528-qwen3-8b:free
 #mistralai/mistral-small-3.2-24b-instruct:free
 #gemini-2.5-flash
@@ -231,12 +231,12 @@ def main():
     responsesbuilder()
     for i in range(2, len(extendedQuestionLst)):
         currentQuestion = extendedQuestionLst[i]
-        prompt_openRouter(currentQuestion, "mistralai/mistral-small-3.2-24b-instruct:free")
+        prompt_openRouter(currentQuestion, "moonshotai/kimi-k2:free")
         print(str(len(extendedQuestionLst)-i) + " remaining")
         #prompt_gemini(currentQuestion)
     #dataBasePrinter("responses")
     responselength = 0
-    for row in responsescurs.execute("SELECT * FROM Responses WHERE model_name = 'mistralai/mistral-small-3.2-24b-instruct:free'").fetchall():
+    for row in responsescurs.execute("SELECT * FROM Responses WHERE model_name = 'moonshotai/kimi-k2:free'").fetchall():
         responselength += 1
     print(responselength)
     
