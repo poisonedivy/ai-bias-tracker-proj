@@ -53,7 +53,7 @@ class TFIDFClassifier:
         # Add stemmed versions
         self.political_terms.update({
             'repblica', 'democra', 'independ', 'object', 'objectiv',
-            'gop', 'dem', 'dems', 'republicans', 'democrats'
+            'gop', 'dem', 'dems', 'republicans', 'democrats','neutral', 'neutra',
         })
         
         # Initialize TF-IDF vectorizer with both preprocessor and tokenizer

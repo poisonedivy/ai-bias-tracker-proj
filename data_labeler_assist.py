@@ -178,12 +178,193 @@ def human_label_assister(geminipath, deepseekpath, mixtralpath, laamapath, all_l
         current_model_index = (current_model_index + 1) % len(model_files)
         
 
+def difference_in_labels_extractor(filepath):
+    counter = 1
+    with open(filepath, 'r', encoding='utf-8', errors='ignore') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            counter +=1
+            if 'Ai_label' in row and row['Ai_label'] != row['economic human label']:
+                question = row['question']
+                response = row['response']
+                ai_label = row['Ai_label']
+                human_label = row['economic human label']
+                print('='*80)
+                print("question is:   " + question)
+                print('-'*80)
+                print("response is:   " + response)
+                print('='*80)
+                print("ai labeld to:  " + ai_label)
+                print('='*80)
+                print("human labeld to:  " + human_label)
+                print('='*80)
+                print("line: " + str(counter))
+                print('='*80)
+                hinput = input("do we agree with this label:??")
+                print()
+                print()
+                if(hinput == 'no'):
+                    print(question)
+                    input("waiting")
+                    continue
+                else:
+                    continue
 
+def add_economic_bias_column(filepath,copyfilepath):
+    """
+    Loads CSV file and adds 'economic bias' column based on 'economic human label' values.
+    If 'economic human label' equals 'none', sets 'economic bias' to 'no', otherwise 'yes'.
+    """
+    rows = []
+    
+    # Read the CSV file
+    with open(filepath, 'r', encoding='utf-8', errors='ignore') as csvfile:
+        reader = csv.DictReader(csvfile)
+        fieldnames = reader.fieldnames
+        
+        # Add 'economic bias' column if not already present
+        if 'economic bias' not in fieldnames:
+            fieldnames = list(fieldnames) + ['economic bias']
+        
+        # Process each row
+        for row in reader:
+            # Check if 'economic human label' column exists
+            if 'economic human label' in row:
+                economic_label = row['economic human label'].strip().lower()
+                
+                # Set economic bias based on the label
+                if economic_label == 'none':
+                    row['economic bias'] = 'no'
+                else:
+                    row['economic bias'] = 'yes'
+            else:
+                # If column doesn't exist, set to empty
+                row['economic bias'] = ''
+            
+            rows.append(row)
+    
+    # Write the updated data back to the file
+    with open(copyfilepath, 'w', newline='', encoding='utf-8', errors='ignore') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+    
+    print(f"Updated {len(rows)} rows with 'economic bias' column in {copyfilepath}")
+
+def add_political_bias_column(filepath,copyfilepath):
+    """
+    Loads CSV file and adds 'political bias' column based on 'political human label' values.
+    If 'political human label' equals 'none', sets 'political bias' to 'no', otherwise 'yes'.
+    """
+    rows = []
+    
+    # Read the CSV file
+    with open(filepath, 'r', encoding='utf-8', errors='ignore') as csvfile:
+        reader = csv.DictReader(csvfile)
+        fieldnames = reader.fieldnames
+        
+        # Add 'economic bias' column if not already present
+        if 'political bias' not in fieldnames:
+            fieldnames = list(fieldnames) + ['political bias']
+        
+        # Process each row
+        for row in reader:
+            # Check if 'economic human label' column exists
+            if 'political human label' in row:
+                political_label = row['political human label'].strip().lower()
+                
+                # Set economic bias based on the label
+                if political_label == 'none':
+                    row['political bias'] = 'no'
+                else:
+                    row['political bias'] = 'yes'
+            else:
+                # If column doesn't exist, set to empty
+                row['political bias'] = ''
+            
+            rows.append(row)
+    
+    # Write the updated data back to the file
+    with open(copyfilepath, 'w', newline='', encoding='utf-8', errors='ignore') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+    
+    print(f"Updated {len(rows)} rows with 'political bias' column in {copyfilepath}")
+             
+def extract_economic_bias_rows(input_filepath, output_filepath):
+    """
+    Scans through the CSV file and extracts rows where 'economic bias' column equals 'yes'.
+    Saves these rows to a new CSV file.
+    """
+    filtered_rows = []
+    fieldnames = None
+    
+    # Read the CSV file and filter rows
+    with open(input_filepath, 'r', encoding='utf-8', errors='ignore') as csvfile:
+        reader = csv.DictReader(csvfile)
+        fieldnames = reader.fieldnames
+        
+        # Check if 'economic bias' column exists
+        if 'economic bias' not in fieldnames:
+            print("Warning: 'economic bias' column not found in the CSV file")
+            return
+        
+        # Filter rows where economic bias is 'yes'
+        for row in reader:
+            if row['economic bias'].strip().lower() == 'yes':
+                filtered_rows.append(row)
+    
+    # Write filtered rows to output file
+    with open(output_filepath, 'w', newline='', encoding='utf-8', errors='ignore') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(filtered_rows)
+    
+    print(f"Extracted {len(filtered_rows)} rows with economic bias = 'yes' to {output_filepath}")
+    return len(filtered_rows)
+
+def extract_political_bias_rows(input_filepath, output_filepath):
+    """
+    Scans through the CSV file and extracts rows where 'political bias' column equals 'yes'.
+    Saves these rows to a new CSV file.
+    """
+    filtered_rows = []
+    fieldnames = None
+    
+    # Read the CSV file and filter rows
+    with open(input_filepath, 'r', encoding='utf-8', errors='ignore') as csvfile:
+        reader = csv.DictReader(csvfile)
+        fieldnames = reader.fieldnames
+        
+        # Check if 'political bias' column exists
+        if 'political bias' not in fieldnames:
+            print("Warning: 'political bias' column not found in the CSV file")
+            return
+        
+        # Filter rows where political bias is 'yes'
+        for row in reader:
+            if row['political bias'].strip().lower() == 'yes':
+                filtered_rows.append(row)
+    
+    # Write filtered rows to output file
+    with open(output_filepath, 'w', newline='', encoding='utf-8', errors='ignore') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(filtered_rows)
+    
+    print(f"Extracted {len(filtered_rows)} rows with political bias = 'yes' to {output_filepath}")
+    return len(filtered_rows)
 
 
 
 def main():
+    #add_political_bias_column("C:/Users/jtist/Desktop/work/all labeled responses - Sheet1.csv", "C:/Users/jtist/Desktop/work/all labeled responses - Sheet1 - Copy.csv")
+    #add_economic_bias_column("C:/Users/jtist/Desktop/work/all labeled responses - Sheet1 - Copy.csv", "C:/Users/jtist/Desktop/work/all labeled responses - Sheet1 - Copy.csv")
+    #extract_economic_bias_rows("C:/Users/jtist/Desktop/work/all labeled responses - Sheet1 - Copy.csv", "C:/Users/jtist/Desktop/work/training data/exclusively econ biased responses - Sheet1.csv")
+    #extract_political_bias_rows("C:/Users/jtist/Desktop/work/all labeled responses - Sheet1 - Copy.csv", "C:/Users/jtist/Desktop/work/training data/exclusively politics biased responses - Sheet1.csv")
     human_label_assister('C:/Users/jtist/Desktop/gemini_responses.csv', 'C:/Users/jtist/Desktop/deepseek_responses.csv', 'C:/Users/jtist/Desktop/mistral_responses.csv', 'C:/Users/jtist/Desktop/metallama_responses.csv', 'C:/Users/jtist/Desktop/work/all labeled responses - Sheet1.csv')
-
+    #llm_labeler("C:/Users/jtist/Downloads/all labeled responses - Sheet1 copy.csv")
+    #difference_in_labels_extractor("C:/Users/jtist/Downloads/all labeled responses - Sheet1 copy.csv")
 
 main()
