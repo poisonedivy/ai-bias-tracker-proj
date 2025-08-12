@@ -359,12 +359,12 @@ def extract_political_bias_rows(input_filepath, output_filepath):
 
 
 def main():
-    #add_political_bias_column("C:/Users/jtist/Desktop/work/all labeled responses - Sheet1.csv", "C:/Users/jtist/Desktop/work/all labeled responses - Sheet1 - Copy.csv")
-    #add_economic_bias_column("C:/Users/jtist/Desktop/work/all labeled responses - Sheet1 - Copy.csv", "C:/Users/jtist/Desktop/work/all labeled responses - Sheet1 - Copy.csv")
-    #extract_economic_bias_rows("C:/Users/jtist/Desktop/work/all labeled responses - Sheet1 - Copy.csv", "C:/Users/jtist/Desktop/work/training data/exclusively econ biased responses - Sheet1.csv")
-    #extract_political_bias_rows("C:/Users/jtist/Desktop/work/all labeled responses - Sheet1 - Copy.csv", "C:/Users/jtist/Desktop/work/training data/exclusively politics biased responses - Sheet1.csv")
-    human_label_assister('C:/Users/jtist/Desktop/gemini_responses.csv', 'C:/Users/jtist/Desktop/deepseek_responses.csv', 'C:/Users/jtist/Desktop/mistral_responses.csv', 'C:/Users/jtist/Desktop/metallama_responses.csv', 'C:/Users/jtist/Desktop/work/all labeled responses - Sheet1.csv')
-    #llm_labeler("C:/Users/jtist/Downloads/all labeled responses - Sheet1 copy.csv")
-    #difference_in_labels_extractor("C:/Users/jtist/Downloads/all labeled responses - Sheet1 copy.csv")
+    add_political_bias_column("C:/Users/jtist/Desktop/work/all labeled responses - Sheet1.csv", "C:/Users/jtist/Desktop/work/all labeled responses - Sheet1 - Copy.csv")
+    add_economic_bias_column("C:/Users/jtist/Desktop/work/all labeled responses - Sheet1 - Copy.csv", "C:/Users/jtist/Desktop/work/all labeled responses - Sheet1 - Copy.csv")
+    extract_economic_bias_rows("C:/Users/jtist/Desktop/work/all labeled responses - Sheet1 - Copy.csv", "C:/Users/jtist/Desktop/work/training data/exclusively econ biased responses - Sheet1.csv")
+    extract_political_bias_rows("C:/Users/jtist/Desktop/work/all labeled responses - Sheet1 - Copy.csv", "C:/Users/jtist/Desktop/work/training data/exclusively politics biased responses - Sheet1.csv")
+    #human_label_assister('C:/Users/jtist/Desktop/gemini_responses.csv', 'C:/Users/jtist/Desktop/deepseek_responses.csv', 'C:/Users/jtist/Desktop/mistral_responses.csv', 'C:/Users/jtist/Desktop/metallama_responses.csv', 'C:/Users/jtist/Desktop/work/all labeled responses - Sheet1.csv')
+    #llm_labeler("C:/Users/jtist/Desktop/work/all labeled responses - Sheet1 - Copy.csv")
+    #difference_in_labels_extractor("C:/Users/jtist/Desktop/work/all labeled responses - Sheet1 - Copy.csv")
 
 main()
